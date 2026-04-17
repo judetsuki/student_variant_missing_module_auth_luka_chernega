@@ -25,7 +25,7 @@ urlpatterns = [
     path('', login_view, name='home'),
     path('accounts/', include('accounts.urls', namespace='accounts')),
     path('products/', include('products.urls', namespace='products')),
-    path('orders/', include('orders.urls', namespace='orders')),
+    path('orders/', include('orders.urls',namespace= 'orders')),
 
 ]
 

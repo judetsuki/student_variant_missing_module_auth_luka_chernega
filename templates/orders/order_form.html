@@ -51,7 +51,7 @@
                         <button type="submit" class="btn btn-success">
                             <i class="bi bi-save"></i> Сохранить заказ
                         </button>
-                        <a href="{% url 'products:order_list' %}" class="btn btn-outline-secondary">
+                        <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary">
                             Отмена
                         </a>
                     </div>
@@ -69,7 +69,7 @@
 
     if (lockValue && lockValue !== currentOrderLockValue) {
         alert('Эта форма заказа уже открыта в другой вкладке.');
-        window.location.href = "{% url 'products:order_list' %}"; 
+        window.location.href = "{% url 'orders:order_list' %}"; 
     } else {
         localStorage.setItem(orderFormLockKey, currentOrderLockValue);
     }

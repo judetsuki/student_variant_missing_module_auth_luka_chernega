@@ -6,6 +6,15 @@ from django.core.paginator import Paginator
 from .models import Order, OrderStatus
 from .forms import OrderForm
 
+def get_user_role(user):
+    if not user.is_authenticated:
+        return 'guest'
+    if user.is_superuser:
+        return 'admin'
+    if user.groups.filter(name='Managers').exists():
+        return 'manager'
+    return 'client'
+
 # Create your views here.
 def order_list(request):
     user_role = get_user_role(request.user) if request.user.is_authenticated else 'guest'
@@ -40,7 +49,7 @@ def order_list(request):
         'status_filter': status_filter,
     }
 
-    return render(request, 'products/order_list.html', context)
+    return render(request, 'orders/order_list.html', context)
 
 
 @login_required
@@ -49,18 +58,18 @@ def order_create(request):
     
     if role not in ['admin', 'manager']:
         messages.error(request, 'У вас нет прав на создание заказов.')
-        return redirect('products:order_list')
+        return redirect('orders:order_list')
 
     if request.method == 'POST':
         form = OrderForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             messages.success(request, 'Заказ успешно создан')
-            return redirect('products:order_list')
+            return redirect('orders:order_list')
     else:
         form = OrderForm()
 
-    return render(request, 'products/order_form.html', {
+    return render(request, 'orders/order_form.html', {
         'form': form,
         'title': 'Добавить заказ',
         'user_role': role 
@@ -69,15 +78,15 @@ def order_create(request):
 
 
 @login_required
-def order_update(request):
+def order_update(request,pk):
     role = get_user_role(request.user)
     
     if role not in ['admin', 'manager']:
         messages.error(request, 'У вас нет прав на создание заказов.')
-        return redirect('products:order_list')
+        return redirect('orders:order_list')
     if not request.user.is_superuser:
         messages.error(request, 'У вас нет прав для выполнения этого действия.')
-        return redirect('products:order_list')
+        return redirect('orders:order_list')
 
     order = get_object_or_404(Order, pk=pk)
 
@@ -86,11 +95,11 @@ def order_update(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'заказ обновлен.')
-            return redirect('products:order_list')
+            return redirect('orders:order_list')
     else:
         form = OrderForm(instance=order)
 
-    return render(request, 'products/order_form.html', {
+    return render(request, 'orders/order_form.html', {
         'form': form,
         'order': order,
         'title': 'Редактировать заказ',
@@ -98,24 +107,24 @@ def order_update(request):
     })
 
 @login_required
-def order_delete(request):
+def order_delete(request,pk):
     role = get_user_role(request.user)
     
     if role not in ['admin', 'manager']:
         messages.error(request, 'У вас нет прав на создание заказов.')
-        return redirect('products:order_list')
+        return redirect('orders:order_list')
     if not request.user.is_superuser:
         messages.error(request, 'У вас нет прав для выполнения этого действия.')
-        return redirect('products:order_list')
+        return redirect('orders:order_list')
 
     order = get_object_or_404(Order, pk=pk)
 
     if request.method == 'POST':
         order.delete()
         messages.success(request, 'заказ удален.')
-        return redirect('products:order_list')
+        return redirect('orders:order_list')
 
-    return render(request, 'products/order_confirm_delete.html', {
+    return render(request, 'orders/order_confirm_delete.html', {
         'order': order,
         'user_role': role
     })

@@ -8,11 +8,13 @@ from .forms import ProductForm, OrderForm
 
 
 def get_user_role(user):
-    """Получение роли пользователя"""
+    if not user.is_authenticated:
+        return 'guest'
     if user.is_superuser:
         return 'admin'
-    # Намеренно упрощено для учебного задания: роли групп отключены.
-    return 'guest'
+    if user.groups.filter(name='Managers').exists():
+        return 'manager'
+    return 'client'
 
 # /products?search="test user"
 def product_list(request):
@@ -191,15 +193,17 @@ def order_list(request):
 
 @login_required
 def order_create(request):
-    if not request.user.is_superuser:
-        messages.error(request, 'У вас нет прав на это действие')
-        return redirect('products:order_list')
+    role = get_user_role(request.user)
     
+    if role not in ['admin', 'manager']:
+        messages.error(request, 'У вас нет прав на создание заказов.')
+        return redirect('products:order_list')
+
     if request.method == 'POST':
         form = OrderForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Заказ создан')
+            messages.success(request, 'Заказ успешно создан')
             return redirect('products:order_list')
     else:
         form = OrderForm()
@@ -207,12 +211,18 @@ def order_create(request):
     return render(request, 'products/order_form.html', {
         'form': form,
         'title': 'Добавить заказ',
-        'user_role': get_user_role(request.user)
+        'user_role': role 
     })
+
 
 
 @login_required
 def order_update(request, pk):
+    role = get_user_role(request.user)
+    
+    if role not in ['admin', 'manager']:
+        messages.error(request, 'У вас нет прав на создание заказов.')
+        return redirect('products:order_list')
     if not request.user.is_superuser:
         messages.error(request, 'У вас нет прав для выполнения этого действия.')
         return redirect('products:order_list')
@@ -232,11 +242,16 @@ def order_update(request, pk):
         'form': form,
         'order': order,
         'title': 'Редактировать заказ',
-        'user_role': get_user_role(request.user)
+        'user_role': role
     })
 
 @login_required
 def order_delete(request, pk):
+    role = get_user_role(request.user)
+    
+    if role not in ['admin', 'manager']:
+        messages.error(request, 'У вас нет прав на создание заказов.')
+        return redirect('products:order_list')
     if not request.user.is_superuser:
         messages.error(request, 'У вас нет прав для выполнения этого действия.')
         return redirect('products:order_list')
@@ -250,7 +265,7 @@ def order_delete(request, pk):
 
     return render(request, 'products/order_confirm_delete.html', {
         'order': order,
-        'user_role': get_user_role(request.user)
+        'user_role': role
     })
 
 

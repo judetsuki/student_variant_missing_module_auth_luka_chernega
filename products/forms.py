@@ -29,7 +29,6 @@ class ProductForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Добавляем подсказки к полям
         self.fields['price'].help_text = 'Цена в рублях'
         self.fields['discount'].help_text = 'Скидка в процентах (0-100)'
         self.fields['quantity'].help_text = 'Количество на складе (не может быть отрицательным)'

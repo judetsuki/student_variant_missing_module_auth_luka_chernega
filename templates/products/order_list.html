@@ -47,7 +47,6 @@
 </div>
 {% endif %}
 
-<!-- Таблица товаров -->
 <div class="card">
     <div class="card-body">
         {% if page_obj %}
@@ -67,9 +66,6 @@
                 <tbody>
     {% for order in page_obj %}
     <tr class="order-row 
-        {% if order.status.name == 'Завершен' %}table-success{% endif %}
-        {% if order.status.name == 'Отменен' %}table-danger text-muted{% endif %}
-        {% if user.is_authenticated and user.is_superuser %}admin-editable-row{% endif %}"
         
         {% if user.is_authenticated and user.is_superuser %}
             data-edit-url="{% url 'products:order_update' order.pk %}"

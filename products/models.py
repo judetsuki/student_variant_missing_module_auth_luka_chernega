@@ -55,19 +55,27 @@ class Unit(models.Model):
     def __str__(self):
         return self.name
 
-class Orders(models.Model):
-    STATUS_CHOICES = [
-        ('Завершен', 'Завершен'),
-        ('Новый', 'Новый')
-    ]
+class Order(models.Model):
     order_number = models.CharField(max_length=20,unique=True, verbose_name="Номер заказа")
     order_date = models.DateField(verbose_name="Дата заказа")
     delivery_date = models.DateField(verbose_name="Дата доставки")
     customer_id = models.ForeignKey('User',on_delete=models.CASCADE, verbose_name='Клиент')
     pickup_point_id = models.ForeignKey('PickupPoint', on_delete=models.CASCADE,verbose_name='Адрес пункта доставки')
-    status = models.CharField(choices=STATUS_CHOICES,max_length=30,verbose_name='Статус заказа')
+    status = models.ForeignKey('Status',on_delete=models.CASCADE, verbose_name="Статус заказа")
 
-class OrderItem
+
+class OrderItem(models.Model):
+    quantity = models.CharField(max_length=20,verbose_name="Количество")
+    price = models.CharField(max_length=20,verbose_name="Цена")
+    order_id = models.ForeignKey('Order', on_delete=models.CASCADE,verbose_name='Заказ')
+    product_id = models.ForeignKey('Product', on_delete=models.CASCADE,verbose_name='Товар')
+
+class OrderStatus(models.Model):
+        STATUS_CHOICES = [
+        ('Завершен', 'Завершен'),
+        ('Новый', 'Новый')
+    ]
+        status = models.CharField(choices=STATUS_CHOICES,max_length=30,verbose_name='Статус заказа')
 
 
 

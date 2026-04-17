@@ -1,0 +1,220 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Заказы{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-list-ul"></i> Заказы</h1>
+
+    {% if user.is_authenticated and user.is_superuser %}
+    <a href="{% url 'products:order_create' %}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Добавить заказ
+    </a>
+    {% endif %}
+</div>
+
+<!-- Фильтры и поиск (только для администратора) -->
+{% if user_role == 'admin' %}
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3" id="product-filters-form">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Поиск по заказам</label>
+                <input type="text" class="form-control" id="search" name="search" value="{{ search_query }}"
+                    placeholder="Поиск...">
+            </div>
+
+            <div class="col-md-3">
+                <label for="status" class="form-label">статус</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">статусы</option>
+                    {% for status in status %}
+                    <option value="{{ status }}" {% if status_filter == status|stringformat:'s' %}selected{% endif %}>
+                        {{ status }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+                <a href="{% url 'products:order_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Сброс
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Таблица товаров -->
+<div class="card">
+    <div class="card-body">
+        {% if page_obj %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Номер заказа</th>
+                        <th>Дата доставки</th>
+                        <th>Дата заказа</th>
+                        <th>Статус</th>
+                        {% if user.is_authenticated and user.is_superuser %}
+                        <th>Действия</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+    {% for order in page_obj %}
+    <tr class="order-row 
+        {% if order.status.name == 'Завершен' %}table-success{% endif %}
+        {% if order.status.name == 'Отменен' %}table-danger text-muted{% endif %}
+        {% if user.is_authenticated and user.is_superuser %}admin-editable-row{% endif %}"
+        
+        {% if user.is_authenticated and user.is_superuser %}
+            data-edit-url="{% url 'products:order_update' order.pk %}"
+        {% endif %}>
+        
+        <td>
+            <strong>№ {{ order.id }}</strong><br>
+            <small class="text-muted">{{ order.created_at|date:"d.m.Y H:i" }}</small>
+        </td>
+
+        <td>
+            {{ order.customer.get_full_name|default:order.customer.username }}
+        </td>
+
+        <td>
+            {{ order.pickup_point.name|default:"—" }}<br>
+            <small class="text-muted">{{ order.pickup_point.address }}</small>
+        </td>
+
+        <td>
+            <span class="badge 
+                {% if order.status.name == 'Новый' %}bg-primary{% elif order.status.name == 'Завершен' %}bg-success{% else %}bg-secondary{% endif %}">
+                {{ order.status.name }}
+            </span>
+        </td>
+
+        <td>
+            <small>
+                {% for item in order.items.all|slice:":2" %}
+                    {{ item.product.name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    Нет товаров
+                {% endfor %}
+                {% if order.items.count > 2 %}...{% endif %}
+            </small>
+        </td>
+
+        <!-- Итоговая сумма -->
+        <td class="fw-bold text-nowrap">
+            {{ order.total_amount|default:"0" }} ₽
+        </td>
+
+        {% if user.is_authenticated and user.is_superuser %}
+        <td>
+            <div class="btn-group" role="group">
+                <a href="{% url 'products:order_update' order.pk %}"
+                    class="btn btn-sm btn-outline-primary" title="Редактировать">
+                    <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{% url 'products:order_delete' order.pk %}"
+                    class="btn btn-sm btn-outline-danger"
+                    onclick="return confirm('Вы уверены, что хотите удалить этот заказ?')">
+                    <i class="bi bi-trash"></i>
+                </a>
+            </div>
+        </td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+</tbody>
+
+            </table>
+        </div>
+
+        <!-- Пагинация -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Пагинация заказов">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                        Предыдущая
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                        {{ num }}
+                    </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                            href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">
+                            Следующая
+                        </a>
+                    </li>
+                    {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox-fill text-muted" style="font-size: 3rem;"></i>
+            <h4 class="text-muted mt-3">Заказы не найдены</h4>
+            <p class="text-muted">Попробуйте изменить параметры поиска или фильтрации.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{% if user_role == 'admin' %}
+<script>
+    const productFiltersForm = document.getElementById('order-filters-form');
+    const searchInput = document.getElementById('search');
+    const statusSelect = document.getElementById('status');
+
+    let searchTimeoutId = null;
+
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeoutId);
+        searchTimeoutId = setTimeout(() => {
+            orderFiltersForm.submit();
+        }, 300);
+    });
+
+    supplierSelect.addEventListener('change', () => orderFiltersForm.submit());
+    sortSelect.addEventListener('change', () => orderFiltersForm.submit());
+
+    const adminRows = document.querySelectorAll('.admin-editable-row');
+    adminRows.forEach((row) => {
+        row.addEventListener('click', (event) => {
+            if (event.target.closest('a, button, input, select, textarea')) {
+                return;
+            }
+            const targetUrl = row.dataset.editUrl;
+            if (targetUrl) {
+                window.location.href = targetUrl;
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

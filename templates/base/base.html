@@ -60,7 +60,7 @@
                         <a class="nav-link" href="{% url 'products:product_list' %}">
                             <i class="bi bi-list-ul"></i> Товары
                             {% if user.is_authenticated %}
-                        <a class="nav-link" href="{% url 'products:order_list' %}">
+                        <a class="nav-link" href="{% url 'orders:order_list' %}">
                             <i class="bi bi-list-ul"></i> Заказы
                             {% endif %}
                         </a>
